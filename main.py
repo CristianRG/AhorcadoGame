@@ -1,6 +1,8 @@
 import images # importamos 3l archivo que contiene las escenas/imagenes del ahorcadp
 import words
 import random
+import os
+from colorama import Fore, Back
 
 class Game(): # clase padre
 
@@ -10,9 +12,10 @@ class Game(): # clase padre
         self.difficulty = None
         self.wordsCorrets = []
         self.wordsIncorrects = []
-        self.words = words.WORDS
+        self.words = words.wordsGenerate()
         self.namePlayers = {
         }
+        self.score = 0
 
 
     def statusAhorcado(self, NOfErrors): # en base al numero de errores obtenidos, imprime una imagen del ahorcado
@@ -53,17 +56,17 @@ class Game(): # clase padre
         return wordRandom
 
     def generateSpaces(self, wordRandom): # genera los espacios en blanco una vez la palabra random fue generada
-        spacesWithe = '_' * len(wordRandom)
-        return spacesWithe
+        spacesWhithe = '_' * len(wordRandom)
+        return spacesWhithe
 
-    def replaceSpacesWhite(self, spacesWithe, wordRandom, wordUsed): # remplaza esos espacios sí la palabra de entrada coincide con la random
+    def replaceSpacesWhite(self, spacesWhithe, wordRandom, wordUsed): # remplaza esos espacios sí la palabra de entrada coincide con la random
         for i in range(0, len(wordRandom)):
             try:
                 if(wordUsed in wordRandom[i]):
-                    spacesWithe = spacesWithe[:i] + wordRandom[i] + spacesWithe[i+1:]
+                    spacesWhithe = spacesWhithe[:i] + wordRandom[i] + spacesWhithe[i+1:]
             except TypeError:
-                return spacesWithe
-        return spacesWithe
+                return spacesWhithe
+        return spacesWhithe
 
     def registerWordsCorrects(self, wordUsed, wordRandom): # registra las palabras correctas o incorrectas usadas
         if(wordUsed in wordRandom):
@@ -71,13 +74,20 @@ class Game(): # clase padre
         else:
             self.wordsIncorrects.append(wordUsed)
 
-    def statusGame(self, spacesWithe, wordRandom): # indica si has ganado o perdido, ganado si descubres todas las palabras, y perdido si ya estas ahorcado
+    def statusGame(self, spacesWhithe, wordRandom): # indica si has ganado o perdido, ganado si descubres todas las palabras, y perdido si ya estas ahorcado
         if(len(self.wordsIncorrects) == (len(self.sprite)-1)):
-            print('\nGame Over')
+            print(Fore.RED + '\n\t\t\tGame Over' + Fore.RESET)
             return 0
-        elif(spacesWithe == wordRandom):
-            print('\nYou won!')
+        elif(spacesWhithe == wordRandom):
+            print(Fore.GREEN + '\n\t\t\tYou won!' + Fore.RESET)
             return 0
+
+    def scorePlayer(self):
+        self.score = 20 * len(self.wordsCorrets)
+        return self.score
+
+    def clearScreen(self):
+        os.system('cls')
 
 
 class StarGame(Game): # clase hija, se encarga de iniciar todo el juego
@@ -85,49 +95,62 @@ class StarGame(Game): # clase hija, se encarga de iniciar todo el juego
     def __init__(self):
 
         super().__init__()
+        self.restarGameControl = False
         self.playerId = None
         self.namePlayer = None
         self.wordRandom = None
-        self.spacesWithe = None
+        self.spacesWhithe = None
         
     def starGame(self): # metodo que inicia todos los metodos de la clase padre para iniciar el juego
-
+        super().clearScreen()
         self.playerId = super().registerNamePlayer()
         self.namePlayer = self.namePlayers.get(self.playerId)
         super().gameDifficulty()
         self.wordRandom = super().GenerateRandomWord()
-        self.spacesWithe = super().generateSpaces(self.wordRandom)
+        self.spacesWhithe = super().generateSpaces(self.wordRandom)
         self.wordUsed = None
         
         while True:
+            self.score = super().scorePlayer()
+            super().clearScreen()
+            self.spacesWhithe = super().replaceSpacesWhite(self.spacesWhithe, self.wordRandom, self.wordUsed)
 
-            self.spacesWithe = super().replaceSpacesWhite(self.spacesWithe, self.wordRandom, self.wordUsed)
-
-            if(super().statusGame(self.spacesWithe, self.wordRandom) == 0):
-                print('\tPlayer: {0}'.format(self.namePlayer))
+            if(super().statusGame(self.spacesWhithe, self.wordRandom) == 0):
+                print('\tPlayer: {0}'.format(self.namePlayer), end=Fore.GREEN + '\tScore: {0}'.format(self.score) + Fore.RESET)
                 super().statusAhorcado(len(self.wordsIncorrects) +1)
-                print(self.spacesWithe)
+                print(self.spacesWhithe)
                 print(self.wordRandom)
                 break
 
-            print('\tPlayer: {0}'.format(self.namePlayer))
+            print('\nPlayer: {0}'.format(self.namePlayer), end=Fore.GREEN + '\tScore: {0}'.format(self.score) + Fore.RESET)
             super().statusAhorcado(len(self.wordsIncorrects) +1)
-            self.spacesWithe = super().replaceSpacesWhite(self.spacesWithe, self.wordRandom, self.wordUsed)
-            print(self.spacesWithe)
+            self.spacesWhithe = super().replaceSpacesWhite(self.spacesWhithe, self.wordRandom, self.wordUsed)
+            print(self.spacesWhithe)
             print('Palabras incorrectas: {0}'.format(self.wordsIncorrects))
             print('Palabras correctas: {0}'.format(self.wordsCorrets))
             self.wordUsed = input('Escriba una letra: ')
             super().registerWordsCorrects(self.wordUsed, self.wordRandom)
 
-        print('[1] Sí [2] No')
-        restart = int(input('¿Volver a jugar?'))
-        if(restart == 1):
-            return 0
-        elif(restart == 2):
-            print('Gracias por jugar!') 
+    def restartGame(self):
+
+        print('[1] Si [2] No')
+        res = int(input('¿Desea volver a jugar? ')) 
+
+        if(res == 1):
+            super().__init__()
+            StarGame().__init__()
+            self.restarGameControl = True
+            return self.restarGameControl
+        else:
+            print('Gracias por jugar!')
+            self.restarGameControl = False
+            return self.restarGameControl
 
             
 game = StarGame()
+game.starGame()
+game.restartGame()
 
-while game.starGame() == 0:
+while game.restarGameControl == True:
     game.starGame()
+    game.restartGame()
